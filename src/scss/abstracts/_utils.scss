@@ -1,0 +1,24 @@
+@use './media' as m;
+@use './mixins' as mix;
+
+.container {
+  max-width: calc(var(--container-width) + var(--container-padding-x) * 2);
+  margin-inline: auto;
+  padding-inline: var(--container-padding-x);
+}
+
+.visually-hidden {
+  @include mix.visually-hidden;
+}
+
+.hidden-mobile {
+  @include m.mobile {
+    display: none !important;
+  }
+}
+
+.visible-mobile {
+  @include m.mobile-above {
+    display: none !important;
+  }
+}
