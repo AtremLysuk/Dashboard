@@ -1,12 +1,13 @@
 @use '../abstracts' as *;
 
 body {
-  @include fluid-text(18, 14);
+  @include fluid-text(16, 14);
 
-  font-family: var(--font-family-base);
+  font-family: var(--font-roboto), sans-serif;
+  font-weight: 400;
   letter-spacing: -0.03em;
-  color: var(--color-gray-50);
-  background-color: var(--color-dark);
+  color: var(--color-text-light);
+  background-color: var(--color-bg-main);
 }
 
 h1, .h1,
@@ -23,7 +24,7 @@ h6, .h6 {
 h1, .h1,
 h2, .h2,
 h3, .h3 {
-  font-family: var(--font-family-accent);
+  font-family: var(--font-family-base);
   font-weight: 500;
 }
 
@@ -35,19 +36,24 @@ h6, .h6 {
 
 h1, .h1 {
   @include fluid-text(70, 30);
-
+  font-size: 21px;
+  font-weight: 900;
   line-height: 1.2;
 }
 
 h2, .h2 {
   @include fluid-text(58, 28);
-
+  font-weight: 500;
+  color: var(--color-subtitle);
+  font-size: 16px;
   line-height: 1.3;
 }
 
 h3, .h3 {
   @include fluid-text(40, 24);
-
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-subtitle);
   line-height: 1.5;
 }
 
@@ -82,7 +88,7 @@ a {
   color: inherit;
 
   @include hover {
-    color: var(--color-accent);
+    color: var(--color-orange);
   }
 
   &[class] {

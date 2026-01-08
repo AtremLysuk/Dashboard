@@ -1,0 +1,21 @@
+.rootContainer {
+  display: grid;
+  grid-template-areas:
+    "aside header"
+    "aside main";
+
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: 110px 1fr;
+}
+
+.header {
+  grid-area: header;
+}
+
+.aside {
+  grid-area: aside;
+}
+
+.mainContent {
+  grid-area: main;
+}

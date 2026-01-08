@@ -3,30 +3,34 @@
 
 :root {
 
+  // colors bg
+  --color-bg-main: #13171a;
+  --color-bg-gray: linear-gradient(180deg, #31363a 0%, #13171a 100%);
+  --color-bg-dark: linear-gradient(186deg, #212429 0%, rgba(108, 112, 118, 0) 100%);
+
 
   // colors
+  --color-title: #f3f3f3;
+  --color-subtitle: #d4d7dc;
   --color-light: #FFFFFF;
-  --color-dark: #141414;
-  --color-dark-10: #1A1A1A;
-  --color-dark-15: #262626;
-  --color-dark-20: #333333;
-  --color-dark-40: #666666;
 
 
-  --color-gray-50: #7E7E81;
-  --color-gray-60: #98989A;
+  --color-text-light: #E1E1E1;
+  --color-text-gray: #c4c4c4;
 
-  --color-accent: #FFD11A;
-  --color-red: #FF5500;
 
-  --border: #{fn.rem(1)} solid var(--color-dark-15);
+  --color-orange: #ffa114;
+//  --color-accent: #FFD11A;
+
+
+  --radius: 10px;
 
   // typography
 
-  --font-family-base: 'Inter, sans-serif';
-  --font-family-accent: 'Kumbh Sans, sans-serif';
+  --font-family-base: var(--font-roboto), sans-serif;
+  //  --font-family-accent: 'Kumbh Sans, sans-serif';
 
-  --container-width: #{fn.rem(1600)};
+  --container-width: #{fn.rem(1200)};
   --container-padding-x: #{fn.rem(16)};
 
   @include m.laptop {

@@ -1,0 +1,33 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding-left: 10px;
+}
+
+.searchInput {
+  padding-block: 11px;
+  padding-left: 35px;
+  background-color: #42474a;
+  border: 1px solid #42474a;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--color-text-gray);
+
+  placeholder {
+    font-weight: 400;
+    font-size: 15px;
+    color: #7d7d7d;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #ff9f1c;
+  }
+}

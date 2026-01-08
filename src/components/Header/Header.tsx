@@ -1,5 +1,7 @@
 import clsx from "clsx";
 import styles from "./Header.module.scss";
+import SearchInput from "@/components/shared/Search/Search";
+import RoleBar from "@/components/shared/RoleBar/RoleBar";
 
 type Props = {
   className?: string;
@@ -8,7 +10,10 @@ type Props = {
 export default function Header({ className }: Props) {
   return (
     <header className={clsx(styles.root, className)}>
-      <h1>Header component</h1>
+      <div className={styles.inner}>
+        <SearchInput />
+        <RoleBar />
+      </div>
     </header>
   );
 }
