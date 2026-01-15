@@ -36,8 +36,14 @@ $mobile-s: 480.98;
     @content;
   }
 }
+//@mixin mobile {
+//  @media (width <= fn.rem($mobile)){
+//    @content;
+//  }
+//}
+
 @mixin mobile {
-  @media (width <= fn.rem($mobile)){
+  @media (width <= $mobile){
     @content;
   }
 }

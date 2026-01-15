@@ -3,6 +3,14 @@ import clsx from "clsx";
 import styles from "./Aside.module.scss";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MyIcon } from "@/components/icons/MyIcon";
+import type { IconName } from "../icons/index";
+
+type Icons = {
+  name: IconName;
+  label: string;
+  path: string;
+};
 
 type Props = {
   className?: string;
@@ -10,36 +18,36 @@ type Props = {
 
 export default function Aside({ className }: Props) {
   const pathName = usePathname();
-  const menuItems = [
+  const menuItems: Icons[] = [
     {
-      label: "Home",
+      name: "home",
+      label: "home",
       path: "/dashboard",
-      iconPath: "/icons/home.svg",
     },
     {
+      name: "clock",
       label: "ORDER HISTORY",
       path: "/dashboard/history",
-      iconPath: "/icons/clock.svg",
     },
     {
-      label: "MESSAGES",
+      name: "messages",
+      label: "messages",
       path: "/dashboard/messages",
-      iconPath: "/icons/messages.svg",
     },
     {
-      label: "STATISTICS",
+      name: "statistics",
+      label: "statistics",
       path: "/dashboard/statistics",
-      iconPath: "/icons/statistics.svg",
     },
     {
+      name: "products",
       label: "PRODUCTS",
       path: "/dashboard/products",
-      iconPath: "/icons/products.svg",
     },
     {
-      label: "SETTINGS",
+      name: "settings",
+      label: "settings",
       path: "/dashboard/settings",
-      iconPath: "/icons/settings.svg",
     },
   ];
 
@@ -58,14 +66,12 @@ export default function Aside({ className }: Props) {
                   styles.menuLink,
                   item.path === pathName && styles["menuLink-active"],
                 )}
+                aria-current={item.path === pathName ? "page" : undefined}
               >
-                <img
-                  className={styles.icon}
-                  src={item.iconPath}
-                  alt=""
-                  width={22}
-                  height={22}
-                  aria-hidden={true}
+                <MyIcon
+                  name={item.name}
+                  size={24}
+                  className={clsx(styles.icon, item.path === pathName && styles.active)}
                 />
                 {item.label}
               </Link>

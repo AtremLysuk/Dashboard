@@ -1,3 +1,5 @@
+@use '../../scss/abstracts' as *;
+
 .rootContainer {
   display: grid;
   grid-template-areas:
@@ -5,17 +7,101 @@
     "aside main";
 
   grid-template-columns: 280px 1fr;
-  grid-template-rows: 110px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 100%;
+  width: 100%;
+
+  @media(width <= 1200px) {
+    grid-template-columns: 230px 1fr;
+  }
+  @include mobile {
+    grid-template-columns: 180px 1fr;
+  }
+
+}
+
+.container {
+  width: 100%;
+  max-width: 1400px;
+  padding-inline: 16px;
+  margin: 0 auto;
 }
 
 .header {
+  padding-bottom: 10px;
   grid-area: header;
+  display: grid;
+  gap: 16px;
+  min-height: 110px;
+  overflow-y: auto;
 }
 
 .aside {
   grid-area: aside;
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+
+  @media(width <= 950px) {
+    max-width: 250px;
+  }
+
+
 }
 
 .mainContent {
   grid-area: main;
+  overflow-y: auto;
+  min-height: calc(100vh - 110px);
 }
+
+.list {
+  padding-left: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+
+  @media(width <= 950px) {
+    padding-left: 5px;
+  }
+}
+
+.title {
+  padding-left: 30px;
+
+  @media(width <= 950px) {
+    padding-left: 5px;
+  }
+}
+
+.products {
+  padding: 15px 30px;
+  display: grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  box-sizing: border-box;
+
+  @media(width <= 950px) {
+    padding: 15px 5px 10px;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media(width <= 950px) {
+
+  }
+}
+
+.productsItem {
+  max-height: 330px;
+  padding: 10px 15px;
+  border-radius: 15px;
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  background: linear-gradient(186deg, #212429 0%, rgba(108, 112, 118, 0) 100%);
+  
+
+
+}
+
+

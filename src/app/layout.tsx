@@ -2,6 +2,7 @@ import "@/scss/main.scss";
 import React from "react";
 import { Roboto } from "next/font/google";
 import type { Metadata } from "next";
+import StoreProvider from "@/components/StoreProvider";
 
 export const metadata: Metadata = {
   title: "Next-pizza Dashboard",
@@ -22,7 +23,9 @@ const roboto = Roboto({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={roboto.className}>{children}</body>
+      <body className={roboto.className}>
+        <StoreProvider>{children}</StoreProvider>
+      </body>
     </html>
   );
 }

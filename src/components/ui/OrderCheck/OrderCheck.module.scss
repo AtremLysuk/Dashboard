@@ -1,0 +1,61 @@
+
+.root {
+  width: 95px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: transparent;
+  border-radius: var(--radius);
+  background: var(--gradient-orange);
+  cursor: pointer;
+
+  &.completed {
+    background: var(--gradient-orange);
+    svg {
+      color: #FFFFFF
+    }
+  }
+
+  &.rejected {
+    background: var(--gradient-gray);
+    svg {
+      color: red
+    }
+  }
+
+  &.pending {
+    background: var(--gradient-yellow);
+    svg {
+      color: gray;
+    }
+  }
+
+  &.new {
+    background: var(--gradient-green);
+    svg {
+      color: green;
+    }
+  }
+  &.inProgress {
+    background: var(--gradient-blue);
+    color: #9be7ff;
+  }
+
+}
+
+.inner{}
+.header{
+  display: grid;
+
+}
+.list{
+  list-style: none;
+}
+.listItem{}
+.label {
+  font-weight: 400;
+  font-size: 15px;
+  color: #fff;
+}
