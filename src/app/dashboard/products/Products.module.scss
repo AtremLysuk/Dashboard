@@ -1,6 +1,69 @@
-.root{
+@use '../../../scss/abstracts' as *;
+
+.root {
+  width: 100%;
+  padding-inline: 30px;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.categoriesMenu {
+
+  margin-inline: auto;
+}
+
+.categoriesList {
+  padding-inline: fluid(30, 15);
+
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: start;
+  gap: 20px;
+  list-style: none;
+}
+
+.categoriesItem {
+
+}
+
+.categoryBtn {
+  padding: 10px 25px;
+  font-weight: 700;
+  font-size: 16px;
+  color: #ececec;
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  background-color: #383d46;
+  border: none;
+  border-radius: var(--radius);
+  will-change: color;
+  transition: background-color 0.3s ease-out;
+  cursor: pointer;
+
+  @include hover{
+    background-color: green;
+  }
+
+  &Active{
+    background-color: red;
+  }
+}
+
+.categoryBtnActive {
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 30px;
 }

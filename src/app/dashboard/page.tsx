@@ -1,6 +1,10 @@
+"use client";
 import styles from "./DashboardLayout.module.scss";
 import { OrderCheck } from "@/components/ui/OrderCheck";
 import { OrderCard } from "@/components/OrderCard";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { fetchOrders } from "@/redux/slices/orderSlice";
+import { useEffect } from "react";
 
 type OrderStatus = "new" | "in-progress" | "completed" | "rejected" | "pending";
 export type TOrder = {
@@ -16,9 +20,9 @@ type TClient = {
 type TProduct = {
   id: number;
   title: string;
-  imageUrl: string;
+  imageUrl: string | null;
   price: number;
-  subtitle: string;
+  subtitle?: string;
   quantity: number;
 };
 
@@ -31,6 +35,9 @@ type TFakeOrder = {
 };
 
 export default function DashboardPage() {
+  const dispatch = useAppDispatch();
+  const testOrders = useAppSelector((state) => state.orders.orders);
+  const isLoading = useAppSelector((state) => state.orders.loading);
   const orders: TOrder[] = [
     {
       id: 105,
@@ -150,6 +157,13 @@ export default function DashboardPage() {
     },
   ];
 
+  const myOrders: any[] = testOrders.data;
+  useEffect(() => {
+    dispatch(fetchOrders());
+  }, []);
+
+  console.log("Redux orders:", myOrders);
+
   return (
     <main>
       <div className={styles.container}>
@@ -167,13 +181,18 @@ export default function DashboardPage() {
                 ))}
               </ul>
             </div>
-            <ul className={styles.products}>
-              {fakeOrder.map((order) => (
-                <li className={styles.productsItem} key={order.id}>
-                  <OrderCard order={order} />
-                </li>
-              ))}
-            </ul>
+            {isLoading && <div>Loading....</div>}
+            {!isLoading &&
+              myOrders !== undefined &&
+              (
+                  <ul className={styles.products}>
+                    {myOrders.map((order) => (
+                      <li className={styles.productsItem} key={order.id}>
+                        <OrderCard order={order} />
+                      </li>
+                    ))}
+                  </ul>,
+                )}
           </div>
         </section>
       </div>

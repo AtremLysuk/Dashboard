@@ -1,0 +1,49 @@
+.root {
+
+}
+
+.inner {
+  display: grid;
+  place-items: center;
+  background: var(--color-bg-gray);
+  border-radius: 15px;
+}
+
+.image {
+  max-width: 100%;
+  aspect-ratio: 1/1;
+  border-radius: 100%;
+  object-fit: cover;
+}
+
+.productContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+
+}
+
+.title {
+  margin-top: 15px;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+  color: var(--color-subtitle);
+}
+
+.buttons {
+
+  padding-block: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.editBtn {
+}
+
+.deleteBtn {
+}

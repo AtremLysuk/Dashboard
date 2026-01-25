@@ -7,16 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ========== USER (Админ/Менеджер) ==========
 model User {
-  id           String  @id @default(cuid())
-  email        String  @unique
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
   name         String?
   passwordHash String?
-  role         Role    @default(ADMIN)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("users")
 }
@@ -28,63 +26,50 @@ enum Role {
 
 // ========== CLIENT (Клиент без регистрации) ==========
 model Client {
-  id    String @id @default(cuid())
-  token String @unique // уникальный токен (сохраняем в localStorage/cookies)
+  id          Int       @id @default(autoincrement())
+  token       String    @unique
+  name        String?
+  phone       String?
+  email       String?
+  cart        Cart?
+  orders      Order[]
+  lastOrderAt DateTime?
+  totalOrders Int       @default(0)
+  totalSpent  Decimal   @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  // Контактные данные (сохраняем при первом заказе)
-  name  String?
-  phone String?
-  email String?
-
-  // Связи
-  cart   Cart? // корзина клиента (одна на клиента)
-  orders Order[] // история заказов этого клиента
-
-  // Для аналитики/поиска
-  lastOrderAt DateTime? // дата последнего заказа
-  totalOrders Int       @default(0) // количество заказов
-  totalSpent  Decimal   @default(0) // общая сумма заказов
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  @@index([phone])
   @@map("clients")
 }
 
 // ========== CATEGORY ==========
 model Category {
-  id    String @id @default(cuid())
-  name  String
-  slug  String @unique
-  order Int    @default(0) // для сортировки в меню
-
-  products Product[]
-
-  createdAt DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  name      String
+  slug      String    @unique
+  order     Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
 
   @@map("categories")
 }
 
 // ========== PRODUCT ==========
 model Product {
-  id          String  @id @default(cuid())
+  id          Int     @id @default(autoincrement())
   title       String
   slug        String  @unique
   description String?
   imageUrl    String
-  isActive    Boolean @default(true)
-  isFeatured  Boolean @default(false)
 
-  // Цены
-  basePrice Decimal // базовая цена
-  salePrice Decimal? // цена со скидкой
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
-  categoryId  String
-  category    Category            @relation(fields: [categoryId], references: [id])
   variants    ProductVariant[]
   ingredients ProductIngredient[]
-  cartItems   CartItem[] // исправлено: было CartItem CartItem[]
-  orderItems  OrderItem[] // исправлено: было OrderItem OrderItem[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -94,25 +79,25 @@ model Product {
 
 // ========== PRODUCT VARIANT ==========
 model ProductVariant {
-  id        String  @id @default(cuid())
-  productId String
+  id        Int     @id @default(autoincrement())
+  productId Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  size  String // "30 см", "40 см", "50 см"
-  price Decimal // дополнительная цена за размер
+  size  String
+  price Decimal
 
-  cartItems  CartItem[] // исправлено: было CartItem CartItem[]
-  orderItems OrderItem[] // исправлено: было OrderItem OrderItem[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   @@map("product_variants")
 }
 
 // ========== INGREDIENT ==========
 model Ingredient {
-  id       String  @id @default(cuid())
+  id       Int     @id @default(autoincrement())
   name     String
   slug     String  @unique
-  price    Decimal // цена добавления
+  price    Decimal
   isActive Boolean @default(true)
 
   products ProductIngredient[]
@@ -125,17 +110,17 @@ model Ingredient {
 
 // ========== PRODUCT-INGREDIENT ==========
 model ProductIngredient {
-  id String @id @default(cuid())
+  id Int @id @default(autoincrement())
 
-  productId String
+  productId Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  ingredientId String
+  ingredientId Int
   ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
 
-  isDefault   Boolean @default(true) // включен по умолчанию
-  isRemovable Boolean @default(false) // можно убрать
-  isExtra     Boolean @default(false) // дополнительный (за доплату)
+  isDefault   Boolean @default(true)
+  isRemovable Boolean @default(true)
+  isExtra     Boolean @default(false)
 
   @@unique([productId, ingredientId])
   @@map("product_ingredients")
@@ -143,10 +128,9 @@ model ProductIngredient {
 
 // ========== CART ==========
 model Cart {
-  id String @id @default(cuid())
+  id Int @id @default(autoincrement())
 
-  // Обязательная привязка к клиенту
-  clientId String @unique // один клиент = одна корзина
+  clientId Int    @unique
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   items CartItem[]
@@ -158,81 +142,72 @@ model Cart {
 }
 
 model CartItem {
-  id     String @id @default(cuid())
-  cartId String
-  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  cartId Int
+  cart   Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
-  variantId String?
-  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId Int?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   quantity Int     @default(1)
-  price    Decimal // цена на момент добавления
+  price    Decimal
 
-  // Дополнительные ингредиенты
-  addedIngredients   Json? // [{id: "", name: "", price: 0}, ...]
-  removedIngredients Json? // [ingredientId, ...]
+  addedIngredients   Json?
+  removedIngredients Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([cartId, productId, variantId])
   @@map("cart_items")
 }
 
 // ========== ORDER ==========
 model Order {
-  id                String        @id @default(cuid())
-  orderNumber       String        @unique
-  // Клиент (если известен)
-  clientId          String?
-  client            Client?       @relation(fields: [clientId], references: [id])
-  // Контактные данные
-  customerName      String
-  customerPhone     String
-  customerEmail     String?
-  // Адрес доставки
-  deliveryAddress   String
-  deliveryNotes     String?
-  // Статус
-  status            OrderStatus   @default(NEW)
-  // Цены
-  subtotal          Decimal
-  deliveryFee       Decimal       @default(0)
-  discount          Decimal       @default(0)
-  tax               Decimal       @default(0)
-  total             Decimal
-  // Оплата
-  paymentStatus     PaymentStatus @default(PENDING)
-  // Время
-  estimatedDelivery DateTime?
-  deliveredAt       DateTime?
-  // Элементы заказа
-  items             OrderItem[]
-  notes             String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id          Int    @id @default(autoincrement())
+  orderNumber String @unique
 
-  // Индексы
-  @@index([clientId])
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  customerName  String
+  customerPhone String
+  customerEmail String?
+
+  deliveryAddress String
+  deliveryNotes   String?
+
+  status   OrderStatus @default(NEW)
+  subtotal Decimal
+  total    Decimal
+
+  paymentStatus PaymentStatus @default(PENDING)
+
+  items OrderItem[]
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([status])
   @@index([createdAt])
   @@index([customerPhone])
-  @@index([orderNumber])
   @@map("orders")
 }
 
 model OrderItem {
-  id      String @id @default(cuid())
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      Int   @id @default(autoincrement())
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
-  variantId String?
-  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId Int?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   title       String
   description String?

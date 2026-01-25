@@ -3,7 +3,15 @@ import { NextResponse } from "next/server";
 
 export async function GET(res: NextResponse) {
   try {
-    const orders = await prisma.order.findMany();
+    const orders = await prisma.order.findMany({
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
     return NextResponse.json({
       success: true,
       data: orders,
