@@ -1,4 +1,3 @@
-// prisma/seed.ts
 import { OrderStatus, PaymentStatus, PrismaClient, Role } from "@prisma/client";
 import { hash } from "bcrypt";
 
@@ -9,6 +8,9 @@ async function resetSequences() {
 
   const tables = [
     "users",
+    "accounts",
+    "sessions",
+    "verification_tokens",
     "clients",
     "categories",
     "products",
@@ -28,18 +30,20 @@ async function resetSequences() {
       );
       console.log(`✅ Последовательность для ${table} сброшена`);
     } catch (error) {
-      // Если таблица не существует или нет последовательности, игнорируем
-      console.log(`ℹ️ Пропускаем ${table}`);
+      console.log(`ℹ️ Пропускаем ${table} (возможно, таблица пустая или нет последовательности)`);
     }
   }
 }
 
 async function main() {
-  console.log("Начинаем seeding...");
+  console.log("🚀 Начинаем seeding базы данных...");
 
-  // 1. Очищаем базу
-  console.log("Очищаем базу данных...");
+  // 1. Очищаем базу (в правильном порядке из-за зависимостей)
+  console.log("🧹 Очищаем базу данных...");
 
+  await prisma.verificationToken.deleteMany({});
+  await prisma.session.deleteMany({});
+  await prisma.account.deleteMany({});
   await prisma.orderItem.deleteMany({});
   await prisma.order.deleteMany({});
   await prisma.cartItem.deleteMany({});
@@ -52,41 +56,112 @@ async function main() {
   await prisma.category.deleteMany({});
   await prisma.user.deleteMany({});
 
-  console.log("База очищена");
+  console.log("✅ База очищена");
 
   // 2. Сбрасываем последовательности
   await resetSequences();
 
-  // 3. Создаем админов
-  const hashedPassword = await hash("admin123", 10);
+  // 3. Создаем пользователей для NextAuth
+  console.log("👤 Создаем пользователей...");
 
+  const hashedPassword = await hash("admin123", 10);
+  const currentDate = new Date();
+
+  // Администратор
   const admin = await prisma.user.create({
     data: {
       email: "admin@pizza.com",
       name: "Главный Админ",
       passwordHash: hashedPassword,
+      emailVerified: currentDate,
       role: Role.ADMIN,
+      createdAt: currentDate,
+      updatedAt: currentDate,
     },
   });
 
+  // Менеджер
   const manager = await prisma.user.create({
     data: {
       email: "manager@pizza.com",
       name: "Менеджер Ресторана",
       passwordHash: hashedPassword,
+      emailVerified: currentDate,
       role: Role.MANAGER,
+      createdAt: currentDate,
+      updatedAt: currentDate,
     },
   });
 
-  console.log("Админы созданы");
+  console.log("✅ Пользователи созданы");
 
-  // 4. Создаем категории
+  // 4. Создаем тестовые аккаунты для Google OAuth
+  console.log("🔐 Создаем тестовые OAuth аккаунты...");
+
+  // Аккаунт для админа (Google)
+  await prisma.account.create({
+    data: {
+      userId: admin.id,
+      type: "oauth",
+      provider: "google",
+      providerAccountId: `google_${admin.id}_${Date.now()}`,
+      access_token: "test_access_token_admin",
+      expires_at: Math.floor(Date.now() / 1000) + 3600 * 24 * 7, // 7 дней
+      token_type: "Bearer",
+      scope: "email profile openid",
+      id_token: "test_id_token_admin",
+      session_state: "active",
+    },
+  });
+
+  // Аккаунт для менеджера (Google)
+  await prisma.account.create({
+    data: {
+      userId: manager.id,
+      type: "oauth",
+      provider: "google",
+      providerAccountId: `google_${manager.id}_${Date.now()}`,
+      access_token: "test_access_token_manager",
+      expires_at: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
+      token_type: "Bearer",
+      scope: "email profile openid",
+      id_token: "test_id_token_manager",
+      session_state: "active",
+    },
+  });
+
+  console.log("✅ OAuth аккаунты созданы");
+
+  // 5. Создаем тестовые сессии
+  console.log("🔑 Создаем тестовые сессии...");
+
+  await prisma.session.create({
+    data: {
+      userId: admin.id,
+      sessionToken: `admin_session_${Date.now()}_1`,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 дней
+    },
+  });
+
+  await prisma.session.create({
+    data: {
+      userId: manager.id,
+      sessionToken: `manager_session_${Date.now()}_1`,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  console.log("✅ Сессии созданы");
+
+  // 6. Создаем категории
+  console.log("📂 Создаем категории...");
+
   const categories = await prisma.category.createMany({
     data: [
-      { name: "Пиццы", slug: "pizzas", order: 1 },
-      { name: "Напитки", slug: "drinks", order: 2 },
-      { name: "Завтраки", slug: "breakfasts", order: 3 },
-      { name: "Десерты", slug: "desserts", order: 4 },
+      { name: "Пиццы", slug: "pizzas", order: 1, createdAt: currentDate },
+      { name: "Напитки", slug: "drinks", order: 2, createdAt: currentDate },
+      { name: "Завтраки", slug: "breakfasts", order: 3, createdAt: currentDate },
+      { name: "Десерты", slug: "desserts", order: 4, createdAt: currentDate },
     ],
   });
 
@@ -95,50 +170,261 @@ async function main() {
   const breakfastCategory = await prisma.category.findFirst({ where: { slug: "breakfasts" } });
   const dessertsCategory = await prisma.category.findFirst({ where: { slug: "desserts" } });
 
-  console.log("Категории созданы");
+  console.log("✅ Категории созданы");
 
-  // 5. Создаем ингредиенты
+  // 7. Создаем ингредиенты
+  console.log("🧀 Создаем ингредиенты...");
+
   await prisma.ingredient.createMany({
     data: [
       // Для пицц
-      { name: "Моцарелла", slug: "mozzarella", price: 25.0 },
-      { name: "Пармезан", slug: "parmesan", price: 30.0 },
-      { name: "Чеддер", slug: "cheddar", price: 28.0 },
-      { name: "Голубой сыр", slug: "blue-cheese", price: 35.0 },
-      { name: "Салями", slug: "salami", price: 40.0 },
-      { name: "Ветчина", slug: "ham", price: 35.0 },
-      { name: "Пепперони", slug: "pepperoni", price: 45.0 },
-      { name: "Курица", slug: "chicken", price: 38.0 },
-      { name: "Бекон", slug: "bacon", price: 42.0 },
-      { name: "Говядина", slug: "beef", price: 50.0 },
-      { name: "Креветки", slug: "shrimp", price: 65.0 },
-      { name: "Тунец", slug: "tuna", price: 55.0 },
-      { name: "Грибы", slug: "mushrooms", price: 20.0 },
-      { name: "Маслины", slug: "olives", price: 25.0 },
-      { name: "Помидоры", slug: "tomatoes", price: 18.0 },
-      { name: "Лук", slug: "onion", price: 15.0 },
-      { name: "Перец болгарский", slug: "bell-pepper", price: 22.0 },
-      { name: "Ананас", slug: "pineapple", price: 28.0 },
-      { name: "Шпинат", slug: "spinach", price: 20.0 },
-      { name: "Базилик", slug: "basil", price: 15.0 },
-      { name: "Чеснок", slug: "garlic", price: 10.0 },
-      { name: "Орегано", slug: "oregano", price: 12.0 },
+      {
+        name: "Моцарелла",
+        slug: "mozzarella",
+        price: 25.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Пармезан",
+        slug: "parmesan",
+        price: 30.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Чеддер",
+        slug: "cheddar",
+        price: 28.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Голубой сыр",
+        slug: "blue-cheese",
+        price: 35.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Салями",
+        slug: "salami",
+        price: 40.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Ветчина",
+        slug: "ham",
+        price: 35.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Пепперони",
+        slug: "pepperoni",
+        price: 45.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Курица",
+        slug: "chicken",
+        price: 38.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Бекон",
+        slug: "bacon",
+        price: 42.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Говядина",
+        slug: "beef",
+        price: 50.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Креветки",
+        slug: "shrimp",
+        price: 65.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Тунец",
+        slug: "tuna",
+        price: 55.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Грибы",
+        slug: "mushrooms",
+        price: 20.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Маслины",
+        slug: "olives",
+        price: 25.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Помидоры",
+        slug: "tomatoes",
+        price: 18.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Лук",
+        slug: "onion",
+        price: 15.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Перец болгарский",
+        slug: "bell-pepper",
+        price: 22.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Ананас",
+        slug: "pineapple",
+        price: 28.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Шпинат",
+        slug: "spinach",
+        price: 20.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Базилик",
+        slug: "basil",
+        price: 15.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Чеснок",
+        slug: "garlic",
+        price: 10.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Орегано",
+        slug: "oregano",
+        price: 12.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
 
       // Для десертов и завтраков
-      { name: "Клубника", slug: "strawberry", price: 35.0 },
-      { name: "Банан", slug: "banana", price: 20.0 },
-      { name: "Шоколад", slug: "chocolate", price: 30.0 },
-      { name: "Карамель", slug: "caramel", price: 25.0 },
-      { name: "Мёд", slug: "honey", price: 20.0 },
-      { name: "Сахарная пудра", slug: "powdered-sugar", price: 15.0 },
-      { name: "Ваниль", slug: "vanilla", price: 18.0 },
-      { name: "Корица", slug: "cinnamon", price: 12.0 },
+      {
+        name: "Клубника",
+        slug: "strawberry",
+        price: 35.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Банан",
+        slug: "banana",
+        price: 20.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Шоколад",
+        slug: "chocolate",
+        price: 30.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Карамель",
+        slug: "caramel",
+        price: 25.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Мёд",
+        slug: "honey",
+        price: 20.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Сахарная пудра",
+        slug: "powdered-sugar",
+        price: 15.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Ваниль",
+        slug: "vanilla",
+        price: 18.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+      {
+        name: "Корица",
+        slug: "cinnamon",
+        price: 12.0,
+        isActive: true,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
     ],
   });
 
   // Получаем ID созданных ингредиентов
   const allIngredients = await prisma.ingredient.findMany();
-
   const ingredientMap = allIngredients.reduce(
     (acc, ing) => {
       acc[ing.slug] = ing.id;
@@ -147,9 +433,11 @@ async function main() {
     {} as Record<string, number>,
   );
 
-  console.log("Ингредиенты созданы");
+  console.log("✅ Ингредиенты созданы");
 
-  // 6. Создаем 5 пицц
+  // 8. Создаем пиццы
+  console.log("🍕 Создаем пиццы...");
+
   const pizzas = [
     {
       title: "Маргарита",
@@ -231,11 +519,21 @@ async function main() {
         description: pizza.description,
         imageUrl: pizza.imageUrl,
         categoryId: pizza.categoryId,
-        variants: {
-          create: pizza.variants,
-        },
+        createdAt: currentDate,
+        updatedAt: currentDate,
       },
     });
+
+    // Создаем варианты пиццы
+    for (const variant of pizza.variants) {
+      await prisma.productVariant.create({
+        data: {
+          productId: createdPizza.id,
+          size: variant.size,
+          price: variant.price,
+        },
+      });
+    }
 
     // Добавляем базовые ингредиенты
     for (const ingredientSlug of pizza.baseIngredients) {
@@ -264,9 +562,11 @@ async function main() {
     }
   }
 
-  console.log("Пиццы созданы");
+  console.log("✅ Пиццы созданы");
 
-  // 7. Создаем 5 напитков
+  // 9. Создаем напитки
+  console.log("🥤 Создаем напитки...");
+
   const drinks = [
     {
       title: "Кола",
@@ -327,23 +627,34 @@ async function main() {
   ];
 
   for (const drink of drinks) {
-    await prisma.product.create({
+    const createdDrink = await prisma.product.create({
       data: {
         title: drink.title,
         slug: drink.slug,
         description: drink.description,
         imageUrl: drink.imageUrl,
         categoryId: drink.categoryId,
-        variants: {
-          create: drink.variants,
-        },
+        createdAt: currentDate,
+        updatedAt: currentDate,
       },
     });
+
+    for (const variant of drink.variants) {
+      await prisma.productVariant.create({
+        data: {
+          productId: createdDrink.id,
+          size: variant.size,
+          price: variant.price,
+        },
+      });
+    }
   }
 
-  console.log("Напитки созданы");
+  console.log("✅ Напитки созданы");
 
-  // 8. Создаем 5 завтраков
+  // 10. Создаем завтраки
+  console.log("🍳 Создаем завтраки...");
+
   const breakfasts = [
     {
       title: "Омлет с ветчиной",
@@ -420,13 +731,21 @@ async function main() {
         description: breakfast.description,
         imageUrl: breakfast.imageUrl,
         categoryId: breakfast.categoryId,
-        variants: {
-          create: breakfast.variants,
-        },
+        createdAt: currentDate,
+        updatedAt: currentDate,
       },
     });
 
-    // Добавляем ингредиенты для завтраков
+    for (const variant of breakfast.variants) {
+      await prisma.productVariant.create({
+        data: {
+          productId: createdBreakfast.id,
+          size: variant.size,
+          price: variant.price,
+        },
+      });
+    }
+
     for (const ingredientSlug of breakfast.baseIngredients) {
       await prisma.productIngredient.create({
         data: {
@@ -452,9 +771,11 @@ async function main() {
     }
   }
 
-  console.log("Завтраки созданы");
+  console.log("✅ Завтраки созданы");
 
-  // 9. Создаем 5 десертов
+  // 11. Создаем десерты
+  console.log("🍰 Создаем десерты...");
+
   const desserts = [
     {
       title: "Чизкейк Нью-Йорк",
@@ -528,13 +849,21 @@ async function main() {
         description: dessert.description,
         imageUrl: dessert.imageUrl,
         categoryId: dessert.categoryId,
-        variants: {
-          create: dessert.variants,
-        },
+        createdAt: currentDate,
+        updatedAt: currentDate,
       },
     });
 
-    // Добавляем ингредиенты для десертов
+    for (const variant of dessert.variants) {
+      await prisma.productVariant.create({
+        data: {
+          productId: createdDessert.id,
+          size: variant.size,
+          price: variant.price,
+        },
+      });
+    }
+
     for (const ingredientSlug of dessert.baseIngredients) {
       await prisma.productIngredient.create({
         data: {
@@ -560,33 +889,51 @@ async function main() {
     }
   }
 
-  console.log("Десерты созданы");
+  console.log("✅ Десерты созданы");
 
-  // 10. Создаем 4 клиентов
+  // 12. Создаем клиентов
+  console.log("👥 Создаем клиентов...");
+
   const clients = [
     {
       token: "client-token-001",
       name: "Иван Петров",
       phone: "+380991234567",
       email: "ivan@example.com",
+      totalOrders: 0,
+      totalSpent: 0,
+      createdAt: currentDate,
+      updatedAt: currentDate,
     },
     {
       token: "client-token-002",
       name: "Мария Сидорова",
       phone: "+380992345678",
       email: "maria@example.com",
+      totalOrders: 0,
+      totalSpent: 0,
+      createdAt: currentDate,
+      updatedAt: currentDate,
     },
     {
       token: "client-token-003",
       name: "Алексей Коваленко",
       phone: "+380993456789",
       email: "alex@example.com",
+      totalOrders: 0,
+      totalSpent: 0,
+      createdAt: currentDate,
+      updatedAt: currentDate,
     },
     {
       token: "client-token-004",
       name: "Елена Иванова",
       phone: "+380994567890",
       email: "elena@example.com",
+      totalOrders: 0,
+      totalSpent: 0,
+      createdAt: currentDate,
+      updatedAt: currentDate,
     },
   ];
 
@@ -598,24 +945,39 @@ async function main() {
     createdClients.push(client);
   }
 
-  console.log("Клиенты созданы");
+  console.log("✅ Клиенты созданы");
 
-  // 11. Получаем все продукты и варианты для создания заказов
+  // 13. Создаем корзины для клиентов
+  console.log("🛒 Создаем корзины...");
+
+  for (const client of createdClients) {
+    await prisma.cart.create({
+      data: {
+        clientId: client.id,
+        createdAt: currentDate,
+        updatedAt: currentDate,
+      },
+    });
+  }
+
+  console.log("✅ Корзины созданы");
+
+  // 14. Получаем все продукты и варианты
   const allProducts = await prisma.product.findMany({
     include: { variants: true },
   });
 
-  // Функция для получения продукта по slug
   const getProduct = (slug: string) => {
     return allProducts.find((p) => p.slug === slug)!;
   };
 
-  // Функция для получения варианта по индексу
   const getVariant = (productSlug: string, variantIndex: number = 0) => {
     return getProduct(productSlug).variants[variantIndex];
   };
 
-  // 12. Создаем 8 разных заказов
+  // 15. Создаем заказы
+  console.log("📦 Создаем заказы...");
+
   const timestamp = Date.now();
   const orders = [
     // Заказ 1: Новый заказ (Иван)
@@ -635,7 +997,7 @@ async function main() {
       items: [
         {
           productId: getProduct("pepperoni").id,
-          variantId: getVariant("pepperoni", 1).id, // 30см
+          variantId: getVariant("pepperoni", 1).id,
           title: "Пепперони",
           description: "Острая пицца с пепперони и сыром",
           imageUrl: "/images/productsImages/pizzas/pepperoni.png",
@@ -644,7 +1006,7 @@ async function main() {
         },
         {
           productId: getProduct("cola").id,
-          variantId: getVariant("cola", 1).id, // 0.5л
+          variantId: getVariant("cola", 1).id,
           title: "Кола",
           description: "Освежающий газированный напиток",
           imageUrl: "/images/productsImages/drinks/cola.jpg",
@@ -653,7 +1015,7 @@ async function main() {
         },
         {
           productId: getProduct("new-york-cheesecake").id,
-          variantId: getVariant("new-york-cheesecake", 0).id, // Кусок
+          variantId: getVariant("new-york-cheesecake", 0).id,
           title: "Чизкейк Нью-Йорк",
           description: "Классический чизкейк с ягодным соусом",
           imageUrl: "/images/productsImages/desserts/cheese.jpg",
@@ -680,7 +1042,7 @@ async function main() {
       items: [
         {
           productId: getProduct("margherita").id,
-          variantId: getVariant("margherita", 2).id, // 35см
+          variantId: getVariant("margherita", 2).id,
           title: "Маргарита",
           description: "Классическая итальянская пицца с моцареллой и томатами",
           imageUrl: "/images/productsImages/pizzas/mixpizza.png",
@@ -689,7 +1051,7 @@ async function main() {
         },
         {
           productId: getProduct("orange-juice").id,
-          variantId: getVariant("orange-juice", 1).id, // 0.5л
+          variantId: getVariant("orange-juice", 1).id,
           title: "Сок апельсиновый",
           description: "Натуральный апельсиновый сок",
           imageUrl: "/images/productsImages/drinks/juice.jpg",
@@ -716,7 +1078,7 @@ async function main() {
       items: [
         {
           productId: getProduct("meat-lovers").id,
-          variantId: getVariant("meat-lovers", 2).id, // 35см
+          variantId: getVariant("meat-lovers", 2).id,
           title: "Мясная",
           description: "Для настоящих мясоедов: салями, ветчина, бекон и курица",
           imageUrl: "/images/productsImages/pizzas/meat.png",
@@ -725,7 +1087,7 @@ async function main() {
         },
         {
           productId: getProduct("hawaiian").id,
-          variantId: getVariant("hawaiian", 1).id, // 30см
+          variantId: getVariant("hawaiian", 1).id,
           title: "Гавайская",
           description: "Пицца с ветчиной и ананасом",
           imageUrl: "/images/productsImages/pizzas/havai.png",
@@ -734,7 +1096,7 @@ async function main() {
         },
         {
           productId: getProduct("sprite").id,
-          variantId: getVariant("sprite", 1).id, // 0.5л
+          variantId: getVariant("sprite", 1).id,
           title: "Спрайт",
           description: "Лимонно-лаймовый газированный напиток",
           imageUrl: "/images/productsImages/drinks/sprite.jpg",
@@ -761,7 +1123,7 @@ async function main() {
       items: [
         {
           productId: getProduct("margherita").id,
-          variantId: getVariant("margherita", 0).id, // 25см
+          variantId: getVariant("margherita", 0).id,
           title: "Маргарита",
           description: "Классическая итальянская пицца с моцареллой и томатами",
           imageUrl: "/images/productsImages/pizzas/mixpizza.png",
@@ -770,7 +1132,7 @@ async function main() {
         },
         {
           productId: getProduct("still-water").id,
-          variantId: getVariant("still-water", 1).id, // 1л
+          variantId: getVariant("still-water", 1).id,
           title: "Вода негазированная",
           description: "Чистая питьевая вода",
           imageUrl: "/images/productsImages/drinks/water.jpg",
@@ -779,144 +1141,8 @@ async function main() {
         },
       ],
     },
-
-    // Заказ 5: Гостевой заказ
-    {
-      orderNumber: `ORD-${timestamp}-005`,
-      clientId: null,
-      customerName: "Анонимный клиент",
-      customerPhone: "+380995678901",
-      customerEmail: null,
-      deliveryAddress: "ул. Новая, 33",
-      deliveryNotes: "Оставить у двери",
-      status: OrderStatus.COMPLETED,
-      subtotal: 696,
-      total: 696,
-      paymentStatus: PaymentStatus.PAID,
-      notes: "Оплата наличными",
-      items: [
-        {
-          productId: getProduct("four-cheese").id,
-          variantId: getVariant("four-cheese", 2).id, // 35см
-          title: "Четыре сыра",
-          description: "Пицца с моцареллой, пармезаном, чеддером и голубым сыром",
-          imageUrl: "/images/productsImages/pizzas/becon-cheese.png",
-          price: 349,
-          quantity: 2,
-        },
-      ],
-    },
-
-    // Заказ 6: Отменен
-    {
-      orderNumber: `ORD-${timestamp}-006`,
-      clientId: createdClients[0].id,
-      customerName: "Иван Петров",
-      customerPhone: "+380991234567",
-      customerEmail: "ivan@example.com",
-      deliveryAddress: "ул. Главная, 10, кв. 5",
-      deliveryNotes: "",
-      status: OrderStatus.CANCELLED,
-      subtotal: 398,
-      total: 398,
-      paymentStatus: PaymentStatus.REFUNDED,
-      notes: "Отменен клиентом",
-      items: [
-        {
-          productId: getProduct("ham-omelette").id,
-          variantId: getVariant("ham-omelette", 1).id, // Большой
-          title: "Омлет с ветчиной",
-          description: "Пышный омлет с ветчиной и сыром",
-          imageUrl: "/images/productsImages/breakfast/omlet-classic.png",
-          price: 199,
-          quantity: 2,
-        },
-      ],
-    },
-
-    // Заказ 7: Отклонен
-    {
-      orderNumber: `ORD-${timestamp}-007`,
-      clientId: createdClients[1].id,
-      customerName: "Мария Сидорова",
-      customerPhone: "+380992345678",
-      customerEmail: "maria@example.com",
-      deliveryAddress: "ул. Центральная, 25, кв. 12",
-      deliveryNotes: "",
-      status: OrderStatus.REJECTED,
-      subtotal: 219,
-      total: 219,
-      paymentStatus: PaymentStatus.FAILED,
-      notes: "Не удалось подтвердить платеж",
-      items: [
-        {
-          productId: getProduct("hawaiian").id,
-          variantId: getVariant("hawaiian", 0).id, // 25см
-          title: "Гавайская",
-          description: "Пицца с ветчиной и ананасом",
-          imageUrl: "/images/productsImages/pizzas/havai.png",
-          price: 219,
-          quantity: 1,
-        },
-      ],
-    },
-
-    // Заказ 8: Еще один новый заказ
-    {
-      orderNumber: `ORD-${timestamp}-008`,
-      clientId: createdClients[2].id,
-      customerName: "Алексей Коваленко",
-      customerPhone: "+380993456789",
-      customerEmail: "alex@example.com",
-      deliveryAddress: "ул. Школьная, 45",
-      deliveryNotes: "Срочный заказ",
-      status: OrderStatus.NEW,
-      subtotal: 1177,
-      total: 1177,
-      paymentStatus: PaymentStatus.PENDING,
-      notes: "Большой заказ на компанию",
-      items: [
-        {
-          productId: getProduct("pepperoni").id,
-          variantId: getVariant("pepperoni", 2).id, // 35см
-          title: "Пепперони",
-          description: "Острая пицца с пепперони и сыром",
-          imageUrl: "/images/productsImages/pizzas/pepperoni.png",
-          price: 329,
-          quantity: 2,
-        },
-        {
-          productId: getProduct("margherita").id,
-          variantId: getVariant("margherita", 1).id, // 30см
-          title: "Маргарита",
-          description: "Классическая итальянская пицца с моцареллой и томатами",
-          imageUrl: "/images/productsImages/pizzas/mixpizza.png",
-          price: 249,
-          quantity: 1,
-        },
-        {
-          productId: getProduct("fanta").id,
-          variantId: getVariant("fanta", 1).id, // 0.5л
-          title: "Фанта",
-          description: "Апельсиновый газированный напиток",
-          imageUrl: "/images/productsImages/drinks/fanta.jpg",
-          price: 69,
-          quantity: 3,
-        },
-        {
-          productId: getProduct("tiramisu").id,
-          variantId: getVariant("tiramisu", 1).id, // На двоих
-          title: "Тирамису",
-          description: "Итальянский десерт с кофе и маскарпоне",
-          imageUrl: "/images/productsImages/desserts/tiramisu.jpg",
-          price: 329,
-          quantity: 1,
-        },
-      ],
-    },
   ];
 
-  // Создаем все заказы
   for (const orderData of orders) {
     await prisma.order.create({
       data: {
@@ -932,6 +1158,8 @@ async function main() {
         total: orderData.total,
         paymentStatus: orderData.paymentStatus,
         notes: orderData.notes,
+        createdAt: currentDate,
+        updatedAt: currentDate,
         items: {
           create: orderData.items,
         },
@@ -939,7 +1167,11 @@ async function main() {
     });
   }
 
-  // 13. Обновляем статистику клиентов
+  console.log("✅ Заказы созданы");
+
+  // 16. Обновляем статистику клиентов
+  console.log("📊 Обновляем статистику клиентов...");
+
   for (let i = 0; i < createdClients.length; i++) {
     const client = createdClients[i];
     const clientOrders = orders.filter((order) => order.clientId === client.id);
@@ -950,18 +1182,28 @@ async function main() {
       data: {
         totalOrders: clientOrders.length,
         totalSpent: totalSpent,
-        lastOrderAt: clientOrders.length > 0 ? new Date() : null,
+        lastOrderAt: clientOrders.length > 0 ? currentDate : null,
       },
     });
   }
 
-  console.log("✅ 8 заказов созданы");
-  console.log("✅ Seeding завершен успешно!");
+  console.log("✅ Статистика клиентов обновлена");
+
+  console.log("\n🎉 SEEDING УСПЕШНО ЗАВЕРШЕН!");
+  console.log("📊 Создано:");
+  console.log(`   👤 ${await prisma.user.count()} пользователей`);
+  console.log(`   🔐 ${await prisma.account.count()} OAuth аккаунтов`);
+  console.log(`   🔑 ${await prisma.session.count()} сессий`);
+  console.log(`   📂 ${await prisma.category.count()} категорий`);
+  console.log(`   🧀 ${await prisma.ingredient.count()} ингредиентов`);
+  console.log(`   🍕 ${await prisma.product.count()} продуктов`);
+  console.log(`   📦 ${await prisma.order.count()} заказов`);
+  console.log(`   👥 ${await prisma.client.count()} клиентов`);
 }
 
 main()
   .catch((e) => {
-    console.error("Ошибка при seeding:", e);
+    console.error("❌ Ошибка при seeding:", e);
     process.exit(1);
   })
   .finally(async () => {

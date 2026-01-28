@@ -2,9 +2,10 @@
 import clsx from "clsx";
 import styles from "./Products.module.scss";
 import { fetchProducts, fetchProductsByCategory } from "@/redux/slices/productSlice";
-import { MouseEventHandler, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { ProductItem } from "@/components/ProductItem";
+import MyLoading from "@/components/shared/MyLoading/MyLoading";
 
 type Category = {
   name: string;
@@ -84,7 +85,7 @@ export default function ProductsPage() {
 
         {status === "pending" && (
           <div className={styles.loading}>
-            <p>Loading...</p>
+            <MyLoading />
           </div>
         )}
 

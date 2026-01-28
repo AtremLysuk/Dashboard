@@ -17,7 +17,7 @@ export const fetchOrders = createAsyncThunk<Order[], void, { rejectValue: string
 
         throw new Error(`HTTP ${res.status}: ${errorText || "Unknown error"}`);
       }
-      const data: Order[] = await res.json();
+      const { data, status } = await res.json();
       return data;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch orders");

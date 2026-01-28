@@ -1,0 +1,26 @@
+.root {
+  margin-right: 30px;
+
+}
+
+.signOutBtn {
+  width: 80px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  backdrop-filter: blur(4px);
+  background: #42474a;
+  color: var(--color-text-gray);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+
+  &:hover{
+    border: 1px solid #ffa114;
+  }
+
+  &:focus-visible{
+    border: 1px solid #ffa114;
+  }
+
+}

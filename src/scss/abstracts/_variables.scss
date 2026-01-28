@@ -22,11 +22,19 @@
   --color-orange: #ffa114;
 
   //gradients
-  --gradient-orange: linear-gradient(96deg, #ffa113 0%, #f4350a 100%);
-  --gradient-yellow: linear-gradient(180deg, #dfa83d 0%, #8d7840 100%);
-  --gradient-blue: linear-gradient(180deg, #3dd5df 0%, #3c7d86 100%);
-  --gradient-green: linear-gradient(180deg, #d2df3d 0%, #959d3e 100%);
-  --gradient-gray: linear-gradient(96deg, #5a5752 0%, #89807e 100%);
+//  --gradient-orange: linear-gradient(96deg, #ffa113 0%, #f4350a 100%);
+//  --gradient-yellow: linear-gradient(180deg, #dfa83d 0%, #8d7840 100%);
+//  --gradient-blue: linear-gradient(180deg, #3dd5df 0%, #3c7d86 100%);
+//  --gradient-green: linear-gradient(180deg, #d2df3d 0%, #959d3e 100%);
+//  --gradient-gray: linear-gradient(96deg, #5a5752 0%, #89807e 100%);
+
+  --gradient-green: linear-gradient(135deg, #4CAF50 0%, #81C784 100%);
+  --gradient-blue: linear-gradient(135deg, #2196F3 0%, #64B5F6 100%);
+  --gradient-orange: linear-gradient(135deg, #FF9800 0%, #FFB74D 100%);
+  --gradient-purple: linear-gradient(135deg, #9C27B0 0%, #BA68C8 100%);
+  --gradient-red: linear-gradient(135deg, #F44336 0%, #E57373 100%);
+  --gradient-gray: linear-gradient(135deg, #9E9E9E 0%, #BDBDBD 100%);
+  --gradient-yellow: linear-gradient(135deg, #FFC107 0%, #FFD54F 100%);
 
 
   --radius: 10px;

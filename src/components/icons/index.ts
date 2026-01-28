@@ -12,6 +12,9 @@ import Etc from "./etc.svg";
 import Micro from "./micro.svg";
 import Screpka from "./screpka.svg";
 import SendMail from "./sendMail.svg";
+import GoogleIcon from "./google-icon.svg";
+import GithubIcon from "./github.svg";
+import WarningIcon from "./warning-icon.svg";
 
 export const icons = {
   clock: Clock,
@@ -28,6 +31,9 @@ export const icons = {
   micro: Micro,
   screpka: Screpka,
   sendMail: SendMail,
+  google: GoogleIcon,
+  github: GithubIcon,
+  warningIcon: WarningIcon,
 };
 
 export type IconName = keyof typeof icons;

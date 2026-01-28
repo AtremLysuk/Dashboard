@@ -3,6 +3,7 @@ import clsx from "clsx";
 import styles from "./RoleBar.module.scss";
 import { Bell } from "lucide-react";
 import { useState } from "react";
+import { SignOutButton } from "@/components/SignOutButton";
 
 type Props = {
   className?: string;
@@ -13,6 +14,7 @@ export default function RoleBar({ className }: Props) {
 
   return (
     <div className={clsx(styles.root, className)}>
+      <SignOutButton />
       <div className={clsx(styles.round, className)}>
         <span>A</span>
       </div>

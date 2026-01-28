@@ -1,0 +1,133 @@
+.root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  min-height: 100dvh;
+  min-width: 100dvh;
+  box-shadow: 0 20px 20px 0 rgba(0, 0, 0, 0.25);
+  background: linear-gradient(180deg, #31363a 0%, #13171a 100%);
+
+  &::after {
+    position: absolute;
+    content: '';
+    min-width: 100%;
+    height: 75%;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-image: url("/images/authPage/bg-decor.png");
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: contain;
+
+  }
+}
+
+.container {
+}
+
+.inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  z-index: 100;
+}
+
+.subtitle {
+  text-align: center;
+  max-width: 380px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #888;
+}
+
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+
+
+  input {
+    width: 423px;
+    height: 67px;
+    padding-left: 22px;
+    background-color: transparent;
+    border: 1.50px solid var(--color-text-gray);
+    border-radius: var(--radius);
+    color: var(--color-text-gray);
+    transition: border-color, outline-color .3s ease;
+    cursor: pointer;
+
+    &:focus {
+      outline: 1px solid #fe9315;;
+      border: 1px solid #fe9315;
+
+    }
+
+  }
+}
+
+.formGroup {
+  position: relative;
+
+  .label {
+    padding-inline: 5px;
+    position: absolute;
+    left: 5%;
+    top: 0;
+    background: #262c2d;
+    font-weight: 500;
+    font-size: 14px;
+    color: #fe9315;
+    transform: translateY(-50%);
+    cursor: pointer;
+    will-change: transform;
+  }
+
+}
+
+
+.submitBtn {
+  width: 100%;
+  padding-block: 24px;
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 16px;
+  backdrop-filter: blur(4px);
+  background: linear-gradient(65deg, #ffa114 0%, #f6421a 100%);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.googleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 65px;
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 16px;
+  backdrop-filter: blur(4px);
+  background: linear-gradient(65deg, #ffa114 0%, #f6421a 100%);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.errorMessage {
+  margin: 0;
+  color: red;
+  font-size: 12px;
+}
+
+//.warningIcon{
+//  display: block;
+//}

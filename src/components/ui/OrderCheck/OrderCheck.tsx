@@ -1,9 +1,7 @@
 import clsx from "clsx";
 import styles from "./OrderCheck.module.scss";
 import { MyIcon } from "@/components/icons/MyIcon";
-import type { IconName } from "@/components/icons/index";
-
-type OrderStatus = "new" | "in-progress" | "completed" | "rejected" | "pending";
+import { ORDER_STATUS_UI, OrderStatus } from "../../../../types.ui";
 
 type Props = {
   id: number;
@@ -11,26 +9,35 @@ type Props = {
   className?: string;
 };
 
-const statusClasses: Record<OrderStatus, string> = {
-  new: styles.new,
-  "in-progress": styles.inProgress,
-  completed: styles.completed,
-  rejected: styles.rejected,
-  pending: styles.pending,
-};
-
-const statusToIcon: Record<OrderStatus, IconName> = {
-  new: "complete",
-  "in-progress": "complete",
-  completed: "complete",
-  rejected: "close",
-  pending: "close",
-};
-
 export default function OrderCheck({ className, status, id }: Props) {
+  const uiConfig = ORDER_STATUS_UI[status];
+
+  const getIconColor = (status: OrderStatus): string => {
+    switch (status) {
+      case "NEW":
+        return "#4CAF50"; // зеленый
+      case "PENDING":
+        return "#FF9800"; // оранжевый
+      case "IN_PROGRESS":
+        return "#2196F3"; // синий
+      case "COMPLETED":
+        return "#9C27B0"; // фиолетовый
+      case "REJECTED":
+      case "CANCELLED":
+        return "#F44336"; // красный
+      default:
+        return "currentColor";
+    }
+  };
+
   return (
-    <button type="button" className={clsx(styles.root, statusClasses[status], className)}>
-      <MyIcon name={statusToIcon[status]} size={17} className={clsx(styles.icon)} />
+    <button type="button" className={clsx(styles.root, styles[uiConfig.className], className)}>
+      <MyIcon
+        name={uiConfig.icon}
+        size={22}
+        color={getIconColor(status)}
+        className={clsx(styles.icon)}
+      />
       <span className={clsx(styles.label)}>#{id}</span>
     </button>
   );

@@ -7,16 +7,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ========== USER (для NextAuth) ==========
 model User {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  name         String?
-  passwordHash String?
-  role         Role     @default(ADMIN)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  passwordHash  String?
+  role          Role      @default(ADMIN)
+
+  accounts Account[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+model Account {
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 enum Role {
@@ -24,7 +68,6 @@ enum Role {
   MANAGER
 }
 
-// ========== CLIENT (Клиент без регистрации) ==========
 model Client {
   id          Int       @id @default(autoincrement())
   token       String    @unique
