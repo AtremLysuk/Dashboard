@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { ProductItem } from "@/components/ProductItem";
 import MyLoading from "@/components/shared/MyLoading/MyLoading";
+import { CreateProductModal } from "@/components/CreateProductModal";
 
 type Category = {
   name: string;
@@ -13,6 +14,7 @@ type Category = {
 };
 
 export default function ProductsPage() {
+  const [isOpen, setIsOpen] = useState(true);
   const [activeCategory, setActiveCategory] = useState<Category>({ name: "Все", categoryId: 0 });
   const dispatch = useAppDispatch();
   const { products, status, error } = useAppSelector((state) => state.products);
@@ -49,17 +51,37 @@ export default function ProductsPage() {
     }
   };
 
+  const onModalClose = () => {
+    if (!isOpen) return;
+    setIsOpen(false);
+  };
+
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
 
   console.log("Products from Redux:", products);
 
+  if (isOpen)
+    return <CreateProductModal isOpen={isOpen} onClose={onModalClose} categories={categories} />;
+
   return (
     <section className={clsx(styles.root)} aria-labelledby="products-title">
       <div className={styles.inner}>
         <header className={styles.header}>
-          <h2 id="products-title">Products</h2>
+          <div className={styles.headerInner}>
+            <h2 id="products-title">Products</h2>
+            <button
+              type="button"
+              className={styles.createProductBtn}
+              onClick={() => {
+                setIsOpen((prev) => !prev);
+              }}
+            >
+              <span>Create new Product</span>
+            </button>
+          </div>
+
           <nav className={styles.categoriesMenu}>
             <ul className={styles.categoriesList}>
               {categories.map((category) => (

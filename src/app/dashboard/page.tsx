@@ -1,7 +1,7 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
-import { useEffect } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import styles from "./DashboardLayout.module.scss";
 import { OrderCheck } from "@/components/ui/OrderCheck";
 import { OrderCard } from "@/components/OrderCard";
@@ -16,6 +16,7 @@ export type TOrdersStatus = {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+
   const dispatch = useAppDispatch();
   const myOrders = useAppSelector((state) => state.orders.orders);
   const isLoading = useAppSelector((state) => state.orders.loading);
@@ -38,9 +39,9 @@ export default function DashboardPage() {
                 <h1 className={styles.title} id="orders-title">
                   ORDER LIST
                 </h1>
-                <button className={styles.createOrderBtn} type="button">
-                  Create New Order
-                </button>
+                {/*<button className={styles.createOrderBtn} type="button">*/}
+                {/*  Create New Order*/}
+                {/*</button>*/}
               </div>
 
               <ul className={styles.list} aria-label="orders-title">
