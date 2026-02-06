@@ -76,7 +76,6 @@ export default function SignUpPage() {
           message: "Registration successful, but login failed. Please sign in manually.",
         });
         setIsRegistering(false);
-        // Перенаправлення на signin через 2 секунди
         setTimeout(() => router.push("/signin"), 2000);
         return;
       }
@@ -104,7 +103,7 @@ export default function SignUpPage() {
           Sign Up Page
         </h1>
         <div className={styles.inner}>
-          <div>logo</div>
+          <MyIcon name="logo" size={150} />
           <div>
             <p className={styles.subtitle}>
               Create your account to get started. You can also sign up using your Google account for
@@ -261,27 +260,26 @@ export default function SignUpPage() {
               )}
             </div>
 
-            <button
-              className={styles.submitBtn}
-              type="submit"
-              disabled={isSubmitting || isRegistering}
-              aria-busy={isSubmitting || isRegistering}
-            >
-              {isSubmitting || isRegistering ? "Creating Account..." : "Sign Up"}
-            </button>
+            <div className={styles.formButtons}>
+              <button
+                className={styles.submitBtn}
+                type="submit"
+                disabled={isSubmitting || isRegistering}
+                aria-busy={isSubmitting || isRegistering}
+              >
+                {isSubmitting || isRegistering ? "Creating Account..." : "Sign Up"}
+              </button>
+              <span>OR</span>
+              <button
+                type="button"
+                className={styles.googleBtn}
+                onClick={handleGoogleSignIn}
+                disabled={isSubmitting || isRegistering}
+              >
+                <MyIcon name="google" size={24} color="white" />
+              </button>
+            </div>
           </form>
-
-          <span>OR</span>
-
-          <button
-            type="button"
-            className={styles.googleBtn}
-            onClick={handleGoogleSignIn}
-            disabled={isSubmitting || isRegistering}
-          >
-            <MyIcon name="google" size={24} color="white" />
-            Sign up with Google
-          </button>
 
           <p className={styles.footerText}>
             Already have an account?{" "}

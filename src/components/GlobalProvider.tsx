@@ -3,6 +3,7 @@ import { SessionProvider } from "next-auth/react";
 import { ReactNode, useRef } from "react";
 import { Provider } from "react-redux";
 import { AppStore, makeStore } from "@/redux/store";
+import { Toaster } from "sonner";
 
 interface GlobalProviderProps {
   children: ReactNode;
@@ -16,7 +17,10 @@ export default function GlobalProvider({ children }: GlobalProviderProps) {
 
   return (
     <SessionProvider refetchInterval={5 * 60} refetchOnWindowFocus={true}>
-      <Provider store={storeRef.current}>{children}</Provider>
+      <Provider store={storeRef.current}>
+        <Toaster position="top-center" richColors />
+        {children}
+      </Provider>
     </SessionProvider>
   );
 }

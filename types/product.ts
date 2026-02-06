@@ -1,8 +1,8 @@
-export interface ProductVariant {
+export type ProductVariant = {
   id: number;
   size: string;
-  price: number;
-}
+  price: string;
+};
 
 export interface Ingredient {
   id: number;
@@ -19,7 +19,7 @@ export interface ProductIngredient {
   isExtra: boolean;
 }
 
-export interface Product {
+export type Product = {
   id: number;
   title: string;
   slug: string;
@@ -36,4 +36,4 @@ export interface Product {
   ingredients: ProductIngredient[];
   createdAt: string;
   updatedAt: string;
-}
+};

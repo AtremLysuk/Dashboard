@@ -63,13 +63,27 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
 
+    if (!data.title || data.title.trim() === "") {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    }
+
+    if (!data.variants || !Array.isArray(data.variants) || data.variants.length === 0) {
+      return NextResponse.json({ error: "At least one variant is required" }, { status: 400 });
+    }
+
+    if (!data.categoryId || isNaN(parseInt(data.categoryId))) {
+      return NextResponse.json({ error: "Valid categoryId is required" }, { status: 400 });
+    }
+
+    const categoryId = parseInt(data.categoryId);
+
     const product = await prisma.product.create({
       data: {
         title: data.title,
         slug: generateSlug(data.title),
         description: data.description || "",
         imageUrl: data.imageUrl || "/default.png",
-        categoryId: parseInt(data.categoryId),
+        categoryId: categoryId,
       },
     });
 
@@ -79,7 +93,7 @@ export async function POST(request: NextRequest) {
           data: {
             productId: product.id,
             size: variant.size,
-            price: variant.price,
+            price: parseFloat(variant.price),
           },
         });
       }

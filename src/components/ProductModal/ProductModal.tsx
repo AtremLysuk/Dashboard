@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import styles from "./CreateProductModal.module.scss";
+import styles from "./ProductModal.module.scss";
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,8 @@ import React, { useEffect, useState } from "react";
 import { IngredientsModal } from "@/components/IngredientsModal";
 import { toast } from "sonner";
 
-const createProductSchema = z.object({
+// Общая схема валидации
+const productSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters"),
   description: z.string(),
   categoryId: z.string().min(1, "Please select a category"),
@@ -21,7 +22,6 @@ const createProductSchema = z.object({
       }),
     )
     .min(1, "At least one variant is required"),
-
   ingredients: z.array(
     z.object({
       ingredientId: z.string().min(1, "Ingredient is required"),
@@ -33,7 +33,7 @@ const createProductSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-type CreateProductFormData = {
+type ProductFormData = {
   title: string;
   description: string;
   categoryId: string;
@@ -63,22 +63,47 @@ type Category = {
   name: string;
 };
 
+type ProductVariant = {
+  id: number;
+  size: string;
+  price: number;
+};
+
+type Product = {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  categoryId: number;
+  variants: ProductVariant[];
+  ingredients: {
+    ingredientId: number;
+    ingredient: Ingredient;
+    isDefault: boolean;
+    isRemovable: boolean;
+    isExtra: boolean;
+  }[];
+};
+
 type Props = {
   className?: string;
   isOpen: boolean;
+  mode?: "create" | "edit";
+  product?: Product | null;
   onClose?: () => void;
   onSuccess?: () => void;
   categories?: Category[];
 };
 
-export default function CreateProductModal({
+export default function ProductModal({
   className,
   isOpen,
+  mode = "create",
+  product = null,
   onClose,
   onSuccess,
   categories = [],
 }: Props) {
-  console.log("Received categories:", categories);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingIngredients, setLoadingIngredients] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
@@ -93,10 +118,10 @@ export default function CreateProductModal({
     control,
     setValue,
     reset,
-    formState: { errors },
-  } = useForm<CreateProductFormData>({
+    formState: { errors, isDirty },
+  } = useForm<ProductFormData>({
     mode: "onChange",
-    resolver: zodResolver(createProductSchema) as any,
+    resolver: zodResolver(productSchema) as any,
     defaultValues: {
       title: "",
       description: "",
@@ -106,6 +131,55 @@ export default function CreateProductModal({
       imageUrl: "",
     },
   });
+
+  const {
+    fields: variantFields,
+    append: appendVariant,
+    remove: removeVariant,
+  } = useFieldArray({
+    control,
+    name: "variants",
+  });
+
+  // Инициализация формы данными продукта при редактировании
+  useEffect(() => {
+    if (mode === "edit" && product && isOpen) {
+      const formIngredients = product.ingredients.map((ing) => ({
+        ingredientId: ing.ingredient.id.toString(),
+        isDefault: ing.isDefault,
+        isRemovable: ing.isRemovable,
+        isExtra: ing.isExtra,
+      }));
+
+      reset({
+        title: product.title,
+        description: product.description || "",
+        categoryId: product.categoryId.toString(),
+        variants: product.variants.map((v) => ({
+          size: v.size,
+          price: v.price.toString(),
+        })),
+        ingredients: formIngredients,
+        imageUrl: product.imageUrl || "/default.png",
+      });
+
+      setSelectedIngredients(product.ingredients.map((ing) => ing.ingredient));
+      setPreviewImage(product.imageUrl || null);
+    } else if (mode === "create" && isOpen) {
+      // Сброс формы для создания
+      reset({
+        title: "",
+        description: "",
+        categoryId: "",
+        variants: [{ size: "", price: "" }],
+        ingredients: [],
+        imageUrl: "",
+      });
+      setSelectedIngredients([]);
+      setPreviewImage(null);
+    }
+  }, [mode, product, isOpen, reset]);
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
@@ -135,7 +209,7 @@ export default function CreateProductModal({
         setValue("imageUrl", result.url);
         toast.success("Image uploaded successfully!");
       } else {
-        alert(result.error || "Upload failed");
+        toast.error(result.error || "Upload failed");
         setPreviewImage(null);
       }
     } catch (error) {
@@ -147,15 +221,7 @@ export default function CreateProductModal({
     }
   };
 
-  const {
-    fields: variantFields,
-    append: appendVariant,
-    remove: removeVariant,
-  } = useFieldArray({
-    control,
-    name: "variants",
-  });
-
+  // Загрузка всех ингредиентов
   useEffect(() => {
     if (isOpen) {
       const fetchIngredients = async () => {
@@ -164,14 +230,14 @@ export default function CreateProductModal({
           const res = await fetch("/api/ingredients");
 
           if (!res.ok) {
-            throw new Error("Failed to fetch in component");
+            throw new Error("Failed to fetch ingredients");
           }
 
           const data = await res.json();
           setIngredients(data);
         } catch (error) {
           console.error("Error:", error);
-          toast.error("Error:");
+          toast.error("Failed to load ingredients");
         } finally {
           setLoadingIngredients(false);
         }
@@ -181,6 +247,7 @@ export default function CreateProductModal({
     }
   }, [isOpen]);
 
+  // Синхронизация выбранных ингредиентов с формой
   useEffect(() => {
     const formIngredients = selectedIngredients.map((ingredient) => ({
       ingredientId: ingredient.id.toString(),
@@ -201,49 +268,41 @@ export default function CreateProductModal({
     setIsIngredientsModalOpen(false);
   };
 
-  const onSubmit: SubmitHandler<CreateProductFormData> = async (data) => {
+  const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
     setIsSubmitting(true);
 
     try {
-      const productData = {
-        title: data.title,
-        description: data.description || "",
-        categoryId: parseInt(data.categoryId),
-        imageUrl: data.imageUrl || "/default-product.png",
-        variants: data.variants.map((variant) => ({
-          size: variant.size,
-          price: parseFloat(variant.price),
-        })),
-        ingredients: data.ingredients.map((ingredient) => ({
-          ingredientId: parseInt(ingredient.ingredientId),
-          isDefault: ingredient.isDefault,
-          isRemovable: ingredient.isRemovable,
-          isExtra: ingredient.isExtra,
-        })),
-      };
+      const url = mode === "create" ? "/api/products" : `/api/product/${product?.id}`;
 
-      const res = await fetch("/api/products", {
-        method: "POST",
+      const method = mode === "create" ? "POST" : "PATCH";
+
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(productData),
+        body: JSON.stringify(data),
       });
 
       const result = await res.json();
 
       if (res.ok) {
-        toast.success("Product created successfully!");
-        reset();
-        setSelectedIngredients([]);
-        setPreviewImage(null);
+        toast.success(`Product ${mode === "create" ? "created" : "updated"} successfully!`);
 
+        if (mode === "create") {
+          reset();
+          setSelectedIngredients([]);
+          setPreviewImage(null);
+        }
+
+        onSuccess?.();
         onClose?.();
       } else {
-        toast.error("Failed to create product");
+        toast.error(result.error || `Failed to ${mode === "create" ? "create" : "update"} product`);
       }
     } catch (error) {
-      toast.error("Failed to create product");
+      toast.error(`Failed to ${mode === "create" ? "create" : "update"} product`);
+      console.error("Submission error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -264,7 +323,7 @@ export default function CreateProductModal({
             ✕
           </button>
           <h1 className={styles.title} id="modalTitle">
-            Create new product
+            {mode === "create" ? "Create new product" : "Edit product"}
           </h1>
           <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
             <div className={styles.formRow}>
@@ -308,7 +367,7 @@ export default function CreateProductModal({
                       id="categoryId"
                       disabled={isSubmitting || categories?.length === 0}
                     >
-                      <option value="0">Select category</option>
+                      <option value="">Select category</option>
                       {categories.map((category) => (
                         <option
                           key={`${category.name}${category.categoryId}`}
@@ -341,6 +400,7 @@ export default function CreateProductModal({
                               setValue("imageUrl", "");
                             }}
                             className={styles.removeImageBtn}
+                            disabled={isSubmitting}
                           >
                             Remove
                           </button>
@@ -491,16 +551,13 @@ export default function CreateProductModal({
                                 prev.filter((ing) => ing.id !== ingredient.id),
                               );
                             }}
+                            disabled={isSubmitting}
                           >
                             ✕
                           </button>
                         </div>
                       ))}
                     </div>
-                    {/*<div className={styles.selectedIngredientsStats}>*/}
-                    {/*  Total: $*/}
-                    {/*  {selectedIngredients.reduce((sum, ing) => sum + ing.price, 0).toFixed(2)}*/}
-                    {/*</div>*/}
                   </div>
                 )}
               </div>
@@ -511,19 +568,57 @@ export default function CreateProductModal({
             </div>
 
             <div className={styles.buttons}>
-              <button className={styles.submitBtn} type="submit" disabled={isSubmitting}>
-                {isSubmitting ? <>Creating...</> : "Create Product"}
+              <button
+                className={styles.submitBtn}
+                type="submit"
+                disabled={isSubmitting || (mode === "edit" && !isDirty)}
+              >
+                {isSubmitting
+                  ? mode === "create"
+                    ? "Creating..."
+                    : "Updating..."
+                  : mode === "create"
+                    ? "Create Product"
+                    : "Update Product"}
               </button>
+
               <button
                 className={styles.resetBtn}
-                type="reset"
+                type="button"
                 onClick={() => {
-                  reset();
-                  setSelectedIngredients([]);
-                  setPreviewImage(null);
+                  if (mode === "create") {
+                    reset();
+                    setSelectedIngredients([]);
+                    setPreviewImage(null);
+                  } else {
+                    // Для режима редактирования сбрасываем к исходным значениям
+                    if (product) {
+                      const formIngredients = product.ingredients.map((ing) => ({
+                        ingredientId: ing.ingredient.id.toString(),
+                        isDefault: ing.isDefault,
+                        isRemovable: ing.isRemovable,
+                        isExtra: ing.isExtra,
+                      }));
+
+                      reset({
+                        title: product.title,
+                        description: product.description || "",
+                        categoryId: product.categoryId.toString(),
+                        variants: product.variants.map((v) => ({
+                          size: v.size,
+                          price: v.price.toString(),
+                        })),
+                        ingredients: formIngredients,
+                        imageUrl: product.imageUrl || "/default.png",
+                      });
+                      setSelectedIngredients(product.ingredients.map((ing) => ing.ingredient));
+                      setPreviewImage(product.imageUrl || null);
+                    }
+                  }
                 }}
+                disabled={isSubmitting}
               >
-                Reset
+                {mode === "create" ? "Reset" : "Reset Changes"}
               </button>
             </div>
           </form>
